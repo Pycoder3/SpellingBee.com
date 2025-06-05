@@ -27,7 +27,7 @@
                 
                 <div id="predefinedOptions">
                     <div class="form-group">
-                        <label for="level" data-i18n="levelLabel">Level (1-50):</label>
+                        <label for="level" data-i18n="levelLabel">Level (1-20):</label>
                         <select id="level" class="form-control">
                             <!-- Levels will be populated by JavaScript -->
                         </select>
@@ -52,6 +52,7 @@ apple" data-i18n-ph="wordListPlaceholder"></textarea>
                     <h2 data-i18n="practiceTitle">Practice Round</h2>
                     <div class="stats">
                         <span id="progress">1/10</span>
+                        <span id="currentLevel">Level 1</span>
                     </div>
                 </div>
 
@@ -84,6 +85,9 @@ apple" data-i18n-ph="wordListPlaceholder"></textarea>
 
             <section id="results-section" class="card" style="display: none;">
                 <h2 data-i18n="resultsTitle">Final Results</h2>
+                <div class="level-info">
+                    <h3 id="completedLevel">Completed Level 1</h3>
+                </div>
                 <div class="score-container">
                     <div class="score-card correct">
                         <h3 data-i18n="correctWords">Correct Words</h3>
@@ -100,8 +104,11 @@ apple" data-i18n-ph="wordListPlaceholder"></textarea>
                         <div id="totalMistakes" class="count">0</div>
                     </div>
                 </div>
-                <button id="restartPractice" class="btn btn-primary" data-i18n="restartPractice">Restart Practice</button>
-                <button id="practiceMistakes" class="btn btn-secondary" data-i18n="practiceMistakes">Practice Mistakes</button>
+                <div class="results-footer">
+                    <button id="restartPractice" class="btn btn-primary" data-i18n="restartPractice">Restart Practice</button>
+                    <button id="practiceMistakes" class="btn btn-secondary" data-i18n="practiceMistakes">Practice Mistakes</button>
+                </div>
+                <div id="continueContainer" class="continue-container"></div>
             </section>
         </main>
 
