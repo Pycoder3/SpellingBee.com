@@ -124,6 +124,8 @@ textarea.form-control {
 }
 
 .stats {
+    display: flex;
+    gap: 15px;
     background-color: var(--light-color);
     padding: 8px 16px;
     border-radius: 20px;
@@ -205,6 +207,11 @@ textarea.form-control {
     margin-top: 20px;
 }
 
+.level-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
 .score-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -255,6 +262,23 @@ textarea.form-control {
     color: var(--info-color);
 }
 
+.results-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.continue-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.continue-btn {
+    margin-top: 20px;
+    width: 100%;
+}
+
 footer {
     text-align: center;
     margin-top: 40px;
@@ -282,5 +306,9 @@ footer {
     
     .word-display {
         font-size: 2rem;
+    }
+    
+    .results-footer {
+        flex-direction: column;
     }
 }
