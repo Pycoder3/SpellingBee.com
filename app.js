@@ -730,6 +730,13 @@ class SpellingBeePro {
     }
 
     initSpeechRecognition() {
+       // التحقق من دعم المتصفح أولاً
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Warning: Speech recognition is not supported in your browser. Try Chrome or Edge.");
+            this.speakModeBtn.disabled = true;
+            return;
+        }
+
         try {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (SpeechRecognition) {
@@ -737,40 +744,47 @@ class SpellingBeePro {
                 this.recognition.continuous = false;
                 this.recognition.interimResults = false;
                 this.recognition.maxAlternatives = 1;
-
+                this.recognition.lang = 'en-US'; // تحديد اللغة الإنجليزية
+    
                 this.recognition.onresult = (event) => {
-                    const letter = event.results[0][0].transcript.trim().toUpperCase();
-                    if (/^[A-Z]$/.test(letter)) {
-                        this.spokenLetters.push(letter);
+                    const transcript = event.results[0][0].transcript.trim().toUpperCase();
+                    // قبول الحروف فقط من A-Z
+                    if (/^[A-Z]$/.test(transcript)) {
+                        this.spokenLetters.push(transcript);
                         this.updateSpokenLetters();
-                        
+                    
+                        // إذا اكتملت الكلمة
                         if (this.spokenLetters.join('').length === this.currentWord.word.length) {
                             this.checkSpokenSpelling();
                         } else {
-                            setTimeout(() => this.recognition.start(), 500);
+                            // استمر في الاستماع للحروف التالية
+                            setTimeout(() => this.startSpeechRecognition(), 300);
                         }
                     }
                 };
 
                 this.recognition.onerror = (event) => {
+                    console.error('Recognition error:', event.error);
                     this.stopSpeechRecognition();
-                    this.speechStatus.textContent = `Error: ${event.error}`;
+                   this.speechStatus.textContent = `Error: ${event.error}`;
                 };
 
                 this.recognition.onend = () => {
-                    this.stopSpeechRecognition();
+                    if (this.startSpeakingBtn.classList.contains('listening')) {
+                        setTimeout(() => this.startSpeechRecognition(), 300);
+                    }
                 };
             } else {
+                console.warn('Speech Recognition not supported');
                 this.speakModeBtn.disabled = true;
-                this.speakModeBtn.title = "Speech recognition not supported";
+                this.speechStatus.textContent = "Speech recognition not supported in your browser";
             }
-        } catch (e) {
-            console.error("Speech recognition error:", e);
+        } catch (error) {
+            console.error('Speech recognition init error:', error);
             this.speakModeBtn.disabled = true;
-            this.speakModeBtn.title = "Speech recognition unavailable";
+            this.speechStatus.textContent = "Speech recognition initialization failed";
         }
     }
-
     populateLevelSelect() {
         for (let i = 1; i <= 20; i++) {
             const option = document.createElement('option');
@@ -928,28 +942,38 @@ class SpellingBeePro {
     }
 
     startSpeechRecognition() {
-        if (!this.recognition) return;
+        if (!this.recognition) {
+            this.speechStatus.textContent = "Recognition not initialized";
+            return;
+        }
 
         try {
-            this.spokenLetters = [];
-            this.spokenLettersDisplay.textContent = '';
-            this.speechStatus.textContent = 'Listening... say each letter';
-            this.startSpeakingBtn.classList.add('listening');
-            this.recognition.start();
-        } catch (e) {
-            console.error("Speech recognition error:", e);
+            // إيقاف أي تعرف جارٍ
             this.stopSpeechRecognition();
+        
+            // تفريغ الحروف السابقة
+            this.spokenLetters = [];
+            this.updateSpokenLetters();
+        
+            this.speechStatus.textContent = "Listening... Say a letter";
+            this.startSpeakingBtn.classList.add('listening');
+        
+            // بدء التعرف على الصوت
+            this.recognition.start();
+        } catch (error) {
+            console.error('Error starting recognition:', error);
             this.speechStatus.textContent = "Error starting microphone";
+            this.stopSpeechRecognition();
         }
     }
 
     stopSpeechRecognition() {
-        if (this.recognition) {
-            try {
+        try {
+            if (this.recognition) {
                 this.recognition.stop();
-            } catch (e) {
-                console.error("Error stopping recognition:", e);
             }
+        } catch (error) {
+            console.error('Error stopping recognition:', error);
         }
         this.startSpeakingBtn.classList.remove('listening');
     }
