@@ -845,23 +845,35 @@ class SpellingBeePro {
     }
 
     startSpeechRecognition() {
-        if (!this.recognition) return;
+        this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        this.recognition.lang = 'en-US';
+        this.recognition.interimResults = false;
+        this.recognition.maxAlternatives = 1;
 
-        try {
-            this.stopSpeechRecognition();
-            if (this.spokenLetters.length === 0) {
-                this.updateSpokenLetters();
+        this.resultMessage.textContent = "🎤 Listening... Please say the word";
+        this.spokenLetters = [];
+
+        this.recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.trim().toLowerCase();
+            console.log("You said:", transcript);
+
+            // نقارن مباشرة الكلمة المسموعة مع الكلمة الصحيحة
+            if (transcript === this.currentWord.word.toLowerCase()) {
+                this.handleCorrectAnswer();
+                setTimeout(() => this.nextWord(), 1500);
+            } else {
+                this.handleIncorrectAnswer(transcript); // يعرض Incorrect والتصحيح
+                this.nextWordBtn.classList.remove('hidden');
             }
+        };
 
-            this.speechStatus.textContent = "Listening... say a letter";
-            this.startSpeakingBtn.classList.add('listening');
-            this.recognition.start();
-        } catch (error) {
-            console.error('Error starting recognition:', error);
-            this.speechStatus.textContent = "Error starting microphone";
-        }
+        this.recognition.onerror = (event) => {
+            console.error("Speech recognition error", event.error);
+            this.resultMessage.textContent = "❌ Could not recognize speech. Try again.";
+        };
+
+        this.recognition.start();
     }
-
     stopSpeechRecognition() {
         try {
             if (this.recognition) {
@@ -1196,4 +1208,5 @@ class SpellingBeePro {
 
 window.addEventListener('DOMContentLoaded', () => {
     new SpellingBeePro();
+
 });
