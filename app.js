@@ -1053,27 +1053,6 @@ class SpellingBeePro {
         this.spokenLettersDisplay.textContent = this.spokenLetters.join(' ');
     }
 
-    checkSpokenSpelling() {
-        const spokenWord = this.spokenLetters.join('').toUpperCase();
-        const correctWord = this.currentWord.word.toUpperCase();
-
-        if (spokenWord === correctWord) {
-            this.speechStatus.textContent = "✅ Correct!";
-            this.correctCount++;
-            setTimeout(() => this.nextWord(), 1000); // كلمة جديدة مباشرة بعد الصح
-        } else {
-            this.speechStatus.textContent = `❌ Incorrect. Correct spelling: ${this.currentWord.word}`;
-            this.totalMistakes++;
-            this.incorrectWords.push(this.currentWord);
-
-            // انتظر 10 ثواني ثم انتقل للكلمة التالية
-            setTimeout(() => this.nextWord(), 10000);
-        }
-
-        this.updateStats();
-        this.stopSpeechRecognition();
-    }
-
     checkSpelling() {
         const userInput = this.wordInput.value.trim().toUpperCase();
         const correctWord = this.currentWord.word.toUpperCase();
@@ -1093,6 +1072,27 @@ class SpellingBeePro {
 
         this.updateStats();
         this.wordInput.value = "";
+    }
+
+    checkSpokenSpelling() {
+        const spokenWord = this.spokenLetters.join('').toUpperCase();
+        const correctWord = this.currentWord.word.toUpperCase();
+
+        if (spokenWord === correctWord) {
+            this.speechStatus.textContent = "✅ Correct!";
+            this.correctCount++;
+            setTimeout(() => this.nextWord(), 1000); // كلمة جديدة مباشرة بعد الصح
+        } else {
+            this.speechStatus.textContent = `❌ Incorrect. Correct spelling: ${this.currentWord.word}`;
+            this.totalMistakes++;
+            this.incorrectWords.push(this.currentWord);
+
+            // انتظر 10 ثواني ثم انتقل للكلمة التالية
+            setTimeout(() => this.nextWord(), 10000);
+        }
+
+        this.updateStats();
+        this.stopSpeechRecognition();
     }
 
     handleCorrectAnswer() {
@@ -1216,4 +1216,5 @@ class SpellingBeePro {
 window.addEventListener('DOMContentLoaded', () => {
     new SpellingBeePro();
 });
+
 
