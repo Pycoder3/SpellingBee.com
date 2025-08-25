@@ -780,24 +780,49 @@ class SpellingBeePro {
         };
 
         this.recognition.onresult = (event) => {
-            const raw = event.results[0][0].transcript;
+            const raw = event.results[0][0].transcript.trim().toLowerCase();
             console.log("Heard:", raw);
 
-            const letter = normalizeToLetter(raw);
-            if (letter) {
-                this.spokenLetters.push(letter);
-                this.updateSpokenLetters();
+            let letters = [];
+
+            // 1) لو قال حرف واحد (ay, bee, see...)
+            if (wordToLetter[raw]) {
+                letters.push(wordToLetter[raw]);
+            } 
+            // 2) لو قال سلسلة بحروف مفصولة (a p p l e)
+            else if (raw.includes(" ")) {
+                raw.split(/\s+/).forEach(t => {
+                    if (wordToLetter[t]) {
+                        letters.push(wordToLetter[t]);
+                    } else if (t.length === 1 && t >= 'a' && t <= 'z') {
+                        letters.push(t.toUpperCase());
+                    }
+                });
+            } 
+            // 3) لو قال كلمة كاملة (apple)
+            else if (raw.length > 1) {
+                letters = raw.split('').map(c => c.toUpperCase());
+            }
+
+            if (letters.length > 0) {
+                letters.forEach(l => {
+                    if (this.spokenLetters.length < this.currentWord.word.length) {
+                        this.spokenLetters.push(l);
+                        this.updateSpokenLetters();
+                    }
+                });
 
                 if (this.spokenLetters.join('') === this.currentWord.word.toUpperCase()) {
                     this.checkSpokenSpelling();
                 } else if (this.spokenLetters.length < this.currentWord.word.length) {
-                    setTimeout(() => this.startSpeechRecognition(), 300);
+                    setTimeout(() => this.startSpeechRecognition(), 400);
                 }
             } else {
-                this.speechStatus.textContent = `Heard: "${raw}". Please say a letter (A, Bee, See...)`;
+                this.speechStatus.textContent = `Heard: "${raw}". Try again, say letters (A, Bee, See)`;
                 setTimeout(() => this.startSpeechRecognition(), 600);
             }
         };
+
 
         this.recognition.onerror = (event) => {
             console.error('Recognition error:', event.error);
