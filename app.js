@@ -1049,8 +1049,6 @@ class SpellingBeePro {
             this.handleIncorrectAnswer(spokenWord);
             this.nextWordBtn.classList.remove('hidden');
         }
-
-        this.stopSpeechRecognition();
     }
 
     checkSpelling() {
@@ -1194,4 +1192,5 @@ class SpellingBeePro {
 
 window.addEventListener('DOMContentLoaded', () => {
     new SpellingBeePro();
+
 });
