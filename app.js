@@ -730,123 +730,109 @@ class SpellingBeePro {
     }
 
     initSpeechRecognition() {
-        // تحقق من دعم المتصفح أولاً
-        if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
-            alert("Warning: Speech recognition is not supported in your browser. Try Chrome or Edge.");
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("Speech recognition not supported. Try Chrome or Edge.");
             this.speakModeBtn.disabled = true;
             return;
         }
 
-        try {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                console.warn('SpeechRecognition constructor not available');
-                this.speakModeBtn.disabled = true;
-                return;
-            }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = false;
+        this.recognition.interimResults = false;
+        this.recognition.lang = 'en-US';
 
-            this.recognition = new SpeechRecognition();
-            this.recognition.continuous = false;
-            this.recognition.interimResults = false;
-            this.recognition.maxAlternatives = 1;
-            this.recognition.lang = 'en-US'; // لغة للنطق/التهجئة
+        // قاموس تحويل الكلمات → أحرف
+        const wordToLetter = {
+            'a':'A','ay':'A','alpha':'A',
+            'b':'B','bee':'B','bravo':'B',
+            'c':'C','see':'C','charlie':'C',
+            'd':'D','dee':'D','delta':'D',
+            'e':'E','ee':'E','echo':'E',
+            'f':'F','ef':'F','foxtrot':'F',
+            'g':'G','gee':'G','golf':'G',
+            'h':'H','aitch':'H','hotel':'H',
+            'i':'I','eye':'I','india':'I',
+            'j':'J','jay':'J','juliet':'J',
+            'k':'K','kay':'K','kilo':'K',
+            'l':'L','el':'L','lima':'L',
+            'm':'M','em':'M','mike':'M',
+            'n':'N','en':'N','november':'N',
+            'o':'O','oh':'O','oscar':'O',
+            'p':'P','pee':'P','papa':'P',
+            'q':'Q','queue':'Q','quebec':'Q',
+            'r':'R','ar':'R','romeo':'R',
+            's':'S','ess':'S','sierra':'S',
+            't':'T','tee':'T','tango':'T',
+            'u':'U','you':'U','uniform':'U',
+            'v':'V','vee':'V','victor':'V',
+            'w':'W','doubleyou':'W','double you':'W','whiskey':'W',
+            'x':'X','ex':'X','xray':'X',
+            'y':'Y','why':'Y','yankee':'Y',
+            'z':'Z','zed':'Z','zee':'Z','zulu':'Z'
+        };
 
-            // خريطة لتحويل الكلمات الشائعة إلى حروف مفردة (تحسّن من دقة التعرف)
-            const wordToLetter = {
-                'a':'A','ay':'A',
-                'b':'B','bee':'B','be':'B',
-                'c':'C','see':'C','sea':'C',
-                'd':'D','dee':'D',
-                'e':'E','ee':'E',
-                'f':'F','ef':'F',
-                'g':'G','gee':'G',
-                'h':'H','aitch':'H',
-                'i':'I','eye':'I',
-                'j':'J','jay':'J',
-                'k':'K','kay':'K',
-                'l':'L','el':'L',
-                'm':'M','em':'M',
-                'n':'N','en':'N',
-                'o':'O','oh':'O',
-                'p':'P','pee':'P',
-                'q':'Q','queue':'Q',
-                'r':'R','ar':'R',
-                's':'S','ess':'S',
-                't':'T','tee':'T',
-                'u':'U','you':'U',
-                'v':'V','vee':'V',
-                'w':'W','doubleyou':'W','double you':'W','double-you':'W',
-                'x':'X','ex':'X',
-                'y':'Y','why':'Y',
-                'z':'Z','zed':'Z','zee':'Z'
-            };
+        const normalizeToLetter = (raw) => {
+            raw = raw.trim().toLowerCase();
+            if (raw.length === 1 && raw >= 'a' && raw <= 'z') return raw.toUpperCase();
+            if (wordToLetter[raw]) return wordToLetter[raw];
+            return null;
+        };
 
-            const normalizeToLetter = (raw) => {
-                raw = raw.trim().toLowerCase();
-                if (raw.length === 1 && raw >= 'a' && raw <= 'z') return raw.toUpperCase();
-                if (wordToLetter[raw]) return wordToLetter[raw];
-                // حاول إزالة الفراغات (مثلاً "double you")
-                const compact = raw.replace(/\s+/g, '');
-                if (wordToLetter[compact]) return wordToLetter[compact];
-                return null;
-            };
+        this.recognition.onresult = (event) => {
+            const raw = event.results[0][0].transcript;
+            console.log("Heard:", raw);
 
-            this.recognition.onresult = (event) => {
-                const raw = event.results[0][0].transcript.trim().toLowerCase();
-                console.log('Speech raw:', raw);
+            const letter = normalizeToLetter(raw);
+            if (letter) {
+                this.spokenLetters.push(letter);
+                this.updateSpokenLetters();
 
-                // قسم النص إلى tokens (يفيد إذا قال: "a p p l e")
-                let tokens = raw.split(/\s+/);
-
-                // لو النتيجة كلمة واحدة (مثلا: "apple") قسمها لحروف
-                if (tokens.length === 1 && tokens[0].length > 1) {
-                    tokens = tokens[0].split('');
-                }
-
-                const letters = [];
-                tokens.forEach(t => {
-                    const letter = normalizeToLetter(t);
-                    if (letter) letters.push(letter);
-                });
-
-                if (letters.length > 0) {
-                    letters.forEach(l => {
-                        if (this.spokenLetters.join('').length < this.currentWord.word.length) {
-                            this.spokenLetters.push(l);
-                            this.updateSpokenLetters();
-                        }
-                    });
-
-                    if (this.spokenLetters.join('').length >= this.currentWord.word.length) {
-                        this.checkSpokenSpelling();
-                    } else {
-                        setTimeout(() => this.startSpeechRecognition(), 200);
-                    }
-                } else {
-                    this.speechStatus.textContent = `Heard: "${raw}". Please try spelling letters clearly.`;
-                    setTimeout(() => this.startSpeechRecognition(), 600);
-                }
-            };
-
-
-            this.recognition.onerror = (event) => {
-                console.error('Recognition error:', event.error);
-                this.stopSpeechRecognition();
-                this.speechStatus.textContent = `Error: ${event.error}`;
-            };
-
-            this.recognition.onend = () => {
-                // إذا لازلنا في وضع الاستماع أعد التشغيل تلقائياً
-                if (this.startSpeakingBtn && this.startSpeakingBtn.classList.contains('listening')) {
+                if (this.spokenLetters.join('') === this.currentWord.word.toUpperCase()) {
+                    this.checkSpokenSpelling();
+                } else if (this.spokenLetters.length < this.currentWord.word.length) {
                     setTimeout(() => this.startSpeechRecognition(), 300);
                 }
-            };
+            } else {
+                this.speechStatus.textContent = `Heard: "${raw}". Please say a letter (A, Bee, See...)`;
+                setTimeout(() => this.startSpeechRecognition(), 600);
+            }
+        };
+
+        this.recognition.onerror = (event) => {
+            console.error('Recognition error:', event.error);
+            this.speechStatus.textContent = `Error: ${event.error}`;
+            this.stopSpeechRecognition();
+        };
+
+        this.recognition.onend = () => {
+            if (this.startSpeakingBtn && this.startSpeakingBtn.classList.contains('listening')) {
+                // استمع من جديد إذا لم ننتهي بعد
+                if (this.spokenLetters.length < this.currentWord.word.length) {
+                    setTimeout(() => this.startSpeechRecognition(), 200);
+                }
+            }
+        };
+    }
+
+    startSpeechRecognition() {
+        if (!this.recognition) return;
+
+        try {
+            this.stopSpeechRecognition();
+            if (this.spokenLetters.length === 0) {
+                this.updateSpokenLetters();
+            }
+
+            this.speechStatus.textContent = "Listening... say a letter";
+            this.startSpeakingBtn.classList.add('listening');
+            this.recognition.start();
         } catch (error) {
-            console.error('Speech recognition init error:', error);
-            this.speakModeBtn.disabled = true;
-            this.speechStatus.textContent = "Speech recognition initialization failed";
+            console.error('Error starting recognition:', error);
+            this.speechStatus.textContent = "Error starting microphone";
         }
     }
+
 
     populateLevelSelect() {
         for (let i = 1; i <= 20; i++) {
