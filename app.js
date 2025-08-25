@@ -792,24 +792,42 @@ class SpellingBeePro {
             };
 
             this.recognition.onresult = (event) => {
-                const raw = event.results[0][0].transcript;
-                const letter = normalizeToLetter(raw);
-                if (letter) {
-                    this.spokenLetters.push(letter);
-                    this.updateSpokenLetters();
+                const raw = event.results[0][0].transcript.trim().toLowerCase();
+                console.log('Speech raw:', raw);
 
-                    if (this.spokenLetters.join('').length === this.currentWord.word.length) {
+                // قسم النص إلى tokens (يفيد إذا قال: "a p p l e")
+                let tokens = raw.split(/\s+/);
+
+                // لو النتيجة كلمة واحدة (مثلا: "apple") قسمها لحروف
+                if (tokens.length === 1 && tokens[0].length > 1) {
+                    tokens = tokens[0].split('');
+                }
+
+                const letters = [];
+                tokens.forEach(t => {
+                    const letter = normalizeToLetter(t);
+                    if (letter) letters.push(letter);
+                });
+
+                if (letters.length > 0) {
+                    letters.forEach(l => {
+                        if (this.spokenLetters.join('').length < this.currentWord.word.length) {
+                            this.spokenLetters.push(l);
+                            this.updateSpokenLetters();
+                        }
+                    });
+
+                    if (this.spokenLetters.join('').length >= this.currentWord.word.length) {
                         this.checkSpokenSpelling();
                     } else {
-                        // استمر بالاستماع للحرف التالي
-                        setTimeout(() => this.startSpeechRecognition(), 300);
+                        setTimeout(() => this.startSpeechRecognition(), 200);
                     }
                 } else {
-                    // لم يتعرّف على حرف واضح — أعطِ تغذية راجعة للمستخدم ثم استمر
-                    this.speechStatus.textContent = `Heard: "${raw}". Say one letter at a time (A, B, C).`;
+                    this.speechStatus.textContent = `Heard: "${raw}". Please try spelling letters clearly.`;
                     setTimeout(() => this.startSpeechRecognition(), 600);
                 }
             };
+
 
             this.recognition.onerror = (event) => {
                 console.error('Recognition error:', event.error);
