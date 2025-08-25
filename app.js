@@ -1054,39 +1054,45 @@ class SpellingBeePro {
     }
 
     checkSpokenSpelling() {
-        const spokenWord = this.spokenLetters.join('').toLowerCase();
-        const isCorrect = spokenWord === this.currentWord.word.toLowerCase();
+        const spokenWord = this.spokenLetters.join('').toUpperCase();
+        const correctWord = this.currentWord.word.toUpperCase();
 
-        if (isCorrect) {
-            this.handleCorrectAnswer();
-            setTimeout(() => this.nextWord(), 1500);
+        if (spokenWord === correctWord) {
+            this.speechStatus.textContent = "✅ Correct!";
+            this.correctCount++;
+            setTimeout(() => this.nextWord(), 1000); // كلمة جديدة مباشرة بعد الصح
         } else {
-            this.handleIncorrectAnswer(spokenWord);
-            this.nextWordBtn.classList.remove('hidden');
+            this.speechStatus.textContent = `❌ Incorrect. Correct spelling: ${this.currentWord.word}`;
+            this.totalMistakes++;
+            this.incorrectWords.push(this.currentWord);
+
+            // انتظر 10 ثواني ثم انتقل للكلمة التالية
+            setTimeout(() => this.nextWord(), 10000);
         }
 
+        this.updateStats();
         this.stopSpeechRecognition();
     }
 
     checkSpelling() {
-        const userInput = this.currentMode === 'write' 
-            ? this.spellingInput.value.trim() 
-            : this.spokenLetters.join('');
-        
-        if (!userInput) {
-            alert("Please enter your spelling");
-            return;
-        }
+        const userInput = this.wordInput.value.trim().toUpperCase();
+        const correctWord = this.currentWord.word.toUpperCase();
 
-        const isCorrect = userInput.toLowerCase() === this.currentWord.word.toLowerCase();
-
-        if (isCorrect) {
-            this.handleCorrectAnswer();
-            setTimeout(() => this.nextWord(), 1500);
+        if (userInput === correctWord) {
+            this.feedback.textContent = "✅ Correct!";
+            this.correctCount++;
+            setTimeout(() => this.nextWord(), 1000); // كلمة جديدة مباشرة بعد الصح
         } else {
-            this.handleIncorrectAnswer(userInput);
-            this.nextWordBtn.classList.remove('hidden');
+            this.feedback.textContent = `❌ Incorrect. Correct spelling: ${this.currentWord.word}`;
+            this.totalMistakes++;
+            this.incorrectWords.push(this.currentWord);
+
+            // انتظر 10 ثواني ثم انتقل للكلمة التالية
+            setTimeout(() => this.nextWord(), 10000);
         }
+
+        this.updateStats();
+        this.wordInput.value = "";
     }
 
     handleCorrectAnswer() {
@@ -1210,3 +1216,4 @@ class SpellingBeePro {
 window.addEventListener('DOMContentLoaded', () => {
     new SpellingBeePro();
 });
+
